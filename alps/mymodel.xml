@@ -1,0 +1,95 @@
+<!--
+   Copyright (c) 2003-2010 Matthias Troyer (troyer@ethz.ch)
+    
+   Distributed under the Boost Software License, Version 1.0.
+   (See accompanying file LICENSE_1_0.txt or copy at
+   http://www.boost.org/LICENSE_1_0.txt)
+  -->
+
+<MODELS>
+<SITEBASIS name="fermion">
+  <QUANTUMNUMBER name="Nup" min="0" max="1" type="fermionic"/>
+  <QUANTUMNUMBER name="Ndown" min="0" max="1" type="fermionic"/>
+  <QUANTUMNUMBER name="N" min="Nup+Ndown" max="Nup+Ndown"/>
+  <QUANTUMNUMBER name="Sz" min="(Nup-Ndown)/2" max = "(Nup-Ndown)/2"/>
+  <OPERATOR name="Splus" matrixelement="1">
+    <CHANGE quantumnumber="Ndown" change="-1"/>
+    <CHANGE quantumnumber="Nup" change="1"/>
+    <CHANGE quantumnumber="Sz" change="1"/>
+  </OPERATOR>
+  <OPERATOR name="Sminus" matrixelement="1">
+    <CHANGE quantumnumber="Nup" change="-1"/>
+    <CHANGE quantumnumber="Ndown" change="+1"/>
+    <CHANGE quantumnumber="Sz" change="-1"/>
+  </OPERATOR>
+  <OPERATOR name="Sz" matrixelement="(Nup-Ndown)/2"/>
+  <OPERATOR name="Nup" matrixelement="Nup"/>
+  <OPERATOR name="Ndown" matrixelement="Ndown"/>
+  <OPERATOR name="c_down" matrixelement="1">
+    <CHANGE quantumnumber="Ndown" change="-1"/>
+    <CHANGE quantumnumber="N" change="-1"/>
+    <CHANGE quantumnumber="Sz" change="1/2"/>
+  </OPERATOR>
+  <OPERATOR name="cdag_down" matrixelement="1">
+    <CHANGE quantumnumber="Ndown" change="1"/>
+    <CHANGE quantumnumber="N" change="1"/>
+    <CHANGE quantumnumber="Sz" change="-1/2"/>
+  </OPERATOR>
+  <OPERATOR name="c_up" matrixelement="1">
+    <CHANGE quantumnumber="Nup" change="-1"/>
+    <CHANGE quantumnumber="N" change="-1"/>
+    <CHANGE quantumnumber="Sz" change="-1/2"/>
+  </OPERATOR>
+  <OPERATOR name="cdag_up" matrixelement="1">
+    <CHANGE quantumnumber="Nup" change="1"/>
+    <CHANGE quantumnumber="N" change="1"/>
+    <CHANGE quantumnumber="Sz" change="+1/2"/>
+  </OPERATOR>
+  <OPERATOR name="n" matrixelement="Nup+Ndown"/>
+  <OPERATOR name="n_up" matrixelement="Nup"/>
+  <OPERATOR name="n_down" matrixelement="Ndown"/>
+</SITEBASIS>
+
+<BASIS name="fermion">
+  <SITEBASIS ref="fermion"/>
+  <CONSTRAINT quantumnumber="Nup" value="Nup_total"/>
+  <CONSTRAINT quantumnumber="Ndown" value="Ndown_total"/>
+  <CONSTRAINT quantumnumber="N" value="N_total"/>
+  <CONSTRAINT quantumnumber="Sz" value="Sz_total"/>
+</BASIS>
+
+<BONDOPERATOR name="fermion_hop" source="x" target="y">
+  cdag_up(x)*c_up(y)+cdag_up(y)*c_up(x)+cdag_down(x)*c_down(y)+cdag_down(y)*c_down(x)
+</BONDOPERATOR>
+
+<BONDOPERATOR name="density_interaction_1" source="x" target="y">
+  n_up(x)*n_down(y) + n_down(x)*n_up(y)
+</BONDOPERATOR>
+
+<BONDOPERATOR name="density_interaction_2" source="x" target="y">
+  n_up(x)*n_up(y) + n_down(x)*n_down(y)
+</BONDOPERATOR>
+
+<BONDOPERATOR name="exchange_interaction" source="x" target="y">
+  cdag_up(x)*c_down(x)*cdag_down(y)*c_up(y) + cdag_down(x)*c_up(x)*cdag_up(y)*c_down(y) + cdag_up(x)*cdag_down(x)*c_up(y)*c_down(y) + c_up(x)*c_down(x)*cdag_up(y)*cdag_down(y)
+</BONDOPERATOR>
+
+<HAMILTONIAN name="orbital_model_complex">
+  <BASIS ref="fermion"/>
+  <SITETERM site="i">
+    Eup#*n_up(i)+Edown#*n_down(i)-mu*n(i)+U#*n_up(i)*n_down(i)+Eud#*cdag_up(i)*c_down(i)+Edu#*cdag_down(i)*c_up(i)
+  </SITETERM> 
+  <BONDTERM source="i" target="j">
+      -tuu#*cdag_up(j)*c_up(i)
+      -tdd#*cdag_down(j)*c_down(i)
+      -tud#*cdag_up(j)*c_down(i)
+      -tdu#*cdag_down(j)*c_up(i)
+      -tcuu#*cdag_up(i)*c_up(j)
+      -tcdd#*cdag_down(i)*c_down(j)
+      -tcud#*cdag_up(i)*c_down(j)
+      -tcdu#*cdag_down(i)*c_up(j)
+    + U'#*density_interaction_1(i,j) + (U'#-J#)*density_interaction_2(i,j) - J#*exchange_interaction(i,j)
+  </BONDTERM>
+</HAMILTONIAN>
+
+</MODELS>
