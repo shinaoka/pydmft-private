@@ -65,9 +65,18 @@ if 'mu' in app_parms:
 isc = 0
 
 #compute G0
-G0,tote_tmp = imp_model.calc_Glatt(vbeta,matsubara_freq,np.zeros((ndiv_tau,nflavor,nflavor),dtype=complex),vmu)
-np.save(app_parms["prefix"]+"-G0", G0)
-print "Computed G0"
+#G0,tote_tmp = imp_model.calc_Glatt(vbeta,matsubara_freq,np.zeros((ndiv_tau,nflavor,nflavor),dtype=complex),vmu)
+#np.save(app_parms["prefix"]+"-G0", G0)
+#print "Computed G0"
+
+#Local projectors
+local_projectors = []
+if 'N_LOCAL_PROJECTORS' in app_parms:
+    nprj = app_parms['N_LOCAL_PROJECTORS']
+    print "Number of local projectors ", nprj
+    for iprj in xrange(nprj):
+        local_projectors.append(app_parms['LOCAL_PROJECTOR'+str(iprj)])
+    check_projectors(local_projectors)
 
 #### self-consistent loop ####
 def calc_diff(self_ene_dmp_in):
@@ -174,12 +183,8 @@ def calc_diff(self_ene_dmp_in):
     #### Impurity solver ####
     time3 = time.time()
     if app_parms['IMP_SOLVER']=='CT-HYB' or not app_parms.has_key('IMP_SOLVER'):
-        imp_result,obs_meas = call_hyb_matrix(app_parms, imp_model, ft, tau, hyb_tau, hyb, invG0, vmu)
+        imp_result,obs_meas = call_hyb_matrix(app_parms, imp_model, ft, tau, hyb_tau, hyb, invG0, vmu, local_projectors)
     elif app_parms['IMP_SOLVER']=='CT-INT':
-        #app_parms['LOAD_CONFIG_CT_INT'] = True
-        #app_parms['DUMP_CONFIG_CT_INT'] = True
-        #if isc==0:
-            #app_parms['LOAD_CONFIG_CT_INT'] = False
         imp_result,obs_meas = call_ct_int(app_parms, imp_model, ft, tau, invG0, vmu)
     else:
         raise RuntimeError("Not implemented")

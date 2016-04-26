@@ -322,3 +322,67 @@ def generate_U_tensor_Hubbard(n_site, U):
     for i_site in xrange(n_site):
         U_tensor[i_site,0,i_site,1,i_site,1,i_site,0] = U
     return U_tensor.reshape((2*n_site,2*n_site,2*n_site,2*n_site))
+
+def check_projectors(projectors):
+    dim = projectors[0].shape[0]
+    Umat = np.zeros((dim,dim),dtype=complex)
+    offset = 0
+    for iprj in xrange(len(projectors)):
+        #print offset+projectors[iprj].shape[1]
+        Umat[:,offset:offset+projectors[iprj].shape[1]] = 1.*projectors[iprj]
+    assert(is_unitary(Umat))
+
+def apply_projectors(projectors,self_ene):
+    if len(projectors)==0:
+        return
+
+    assert self_ene.shape[1]==self_ene.shape[2]
+    ntau = self_ene.shape[0]
+    N = self_ene.shape[1]
+    Nprj = len(projectors)
+
+    self_ene_prj = np.zeros_like(self_ene)
+    for itau in xrange(ntau):
+        for iprj in xrange(Nprj):
+            Uprj = projectors[iprj][:,:]
+            self_ene_prj[itau,:,:] += np.dot(Uprj,np.dot(Uprj.conjugate().transpose(),np.dot(self_ene[itau,:,:],np.dot(Uprj,Uprj.conjugate().transpose()))))
+
+    self_ene[:,:,:] = 1.*self_ene_prj
+
+def apply_projectors_2d(projectors,mat):
+    if len(projectors)==0:
+        return
+
+    assert mat.shape[0]==mat.shape[1]
+    N = mat.shape[0]
+    Nprj = len(projectors)
+
+    mat_prj = np.zeros_like(mat)
+    for iprj in xrange(Nprj):
+        Uprj = projectors[iprj][:,:]
+        mat_prj[:,:] += np.dot(Uprj,np.dot(Uprj.conjugate().transpose(),np.dot(mat[:,:],np.dot(Uprj,Uprj.conjugate().transpose()))))
+
+    mat[:,:] = 1.*mat_prj
+
+def diagonalize_with_projetion(mat,projectors):
+    if len(projectors)==0:
+        return eigh_ordered(mat)
+
+    assert mat.shape[0]==mat.shape[1]
+    N = mat.shape[0]
+    Nprj = len(projectors)
+
+    mat_prj = np.zeros_like(mat)
+    evals = np.zeros((N,),dtype=float)
+    evecs = np.zeros((N,N),dtype=complex)
+    offset = 0
+    for iprj in xrange(Nprj):
+        Uprj = projectors[iprj][:,:]
+        dim = Uprj.shape[1]
+        mat_prj = np.dot(Uprj.conjugate().transpose(),np.dot(mat[:,:],Uprj))
+        evals_prj, evecs_prj = eigh_ordered(mat_prj)
+        evals[offset:offset+dim] = 1.*evals_prj
+        evecs[:,offset:offset+dim] = np.dot(Uprj,evecs_prj)
+        offset += dim
+    assert(is_unitary(evecs))
+    return evals, evecs
