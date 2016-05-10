@@ -163,9 +163,13 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
         if (not 'BASIS_ROT_TYPE' in app_parms) or ('BASIS_ROT_TYPE' in app_parms and app_parms['BASIS_ROT_TYPE']==0):
             print "Diagonalizing local Hamiltonian..."
             h_mat = imp_model.get_moment(1)[start:end,start:end]
-        else:
+        elif app_parms['BASIS_ROT_TYPE']==1:
             print "Diagonalizing integrated Delta..."
             h_mat = integrate_hyb(hyb_tau[:,start:end,start:end])
+        elif app_parms['BASIS_ROT_TYPE']==2:
+            print "Diagonalizing Delta(omega_0)..."
+            hyb0 = hyb[:,start:end,start:end]
+            h_mat = np.dot(hyb0.conjugate().transpose(),hyb0)
 
         apply_projectors_2d(local_projectors, h_mat)
 

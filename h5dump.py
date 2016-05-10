@@ -10,8 +10,8 @@ def create_dataset_from_dict(f, path, dict):
             dset.append(f.create_dataset(path+'/'+k, data=v))
     return dset
 
-def dump_results_modmft(app_parms, obj_list):
-    nsc = len(obj_list)
+def dump_results_modmft(app_parms, isc, obj, exclude_list=[]):
+    nsc = isc+1
 
     if nsc==1:
         f = h5py.File(app_parms['prefix']+'.out.h5','w')
@@ -20,11 +20,13 @@ def dump_results_modmft(app_parms, obj_list):
         f = h5py.File(app_parms['prefix']+'.out.h5','a')
 
     #write all instances in obj (only the last iteration)
-    obj = obj_list[-1]
     if nsc>1:
         del f['results']
         del f['NUM_RESULTS']
     for k,v in vars(obj).items():
+        if k in exclude_list:
+            continue
+
         if isinstance(v,dict):
             create_dataset_from_dict(f,'results/'+k,v)
             create_dataset_from_dict(f,'results'+str(nsc-1)+'/'+k,v)

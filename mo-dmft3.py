@@ -21,6 +21,24 @@ import impurity_model
 import hashlib
 
 
+exclude_list = ['G_latt', 
+    'Greens_Im_error', 
+    'Greens_Im_mean', 
+    'Greens_Re_error', 
+    'Greens_Re_mean', 
+    'Greens_legendre_Im_error', 
+    'Greens_legendre_Re_error', 
+    'Greens_legendre_rotated_Im_error', 
+    'Greens_legendre_rotated_Im_mean', 
+    'Greens_legendre_rotated_Re_error', 
+    'Greens_legendre_rotated_Re_mean', 
+    'Greens_rotated_Im_error', 
+    'Greens_rotated_Im_mean', 
+    'Greens_rotated_Re_error', 
+    'Greens_rotated_Re_mean', 
+    'hyb_n', 
+    'hyb_tau']
+
 #### setup parameters ####
 app_parms = inp.read_input_parms(sys.argv[1]+'.h5')
 app_parms['prefix'] = sys.argv[1]
@@ -238,8 +256,7 @@ def calc_diff(self_ene_dmp_in):
     dmft_result.update(imp_model.get_moment(1), imp_model.get_moment(2), imp_model.get_moment(3), vmu, G_latt, G_imp, g_tau_im, self_ene_out, hyb, hyb_tau)
     for key in obs_meas.keys():
         dmft_result[key] = obs_meas[key]
-    dmft_result_list.append(copy.deepcopy(dmft_result))
-    dump_results_modmft(app_parms,dmft_result_list)
+    dump_results_modmft(app_parms, isc, dmft_result, exclude_list)
 
     time2 = time.time()
     print "Rest part took ", time2-time1, " sec."
@@ -270,7 +287,6 @@ if 'SYMM_MAT' in app_parms:
 
 #sciopt.root(calc_diff,self_ene_init,method="anderson",options={'nit' : app_parms["MAX_IT"], 'fatol' : app_parms["CONVERGED"], 'disp': True, 'M': 10})
 dmft_result = DMFTResult()
-dmft_result_list = []
 mix = 0.5
 if 'mix' in app_parms:
     mix = app_parms['mix']

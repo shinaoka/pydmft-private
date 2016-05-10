@@ -95,33 +95,6 @@ class OrbitalModel:
     
         return G_latt,-rtmp
 
-    def calc_Glatt_new(self,beta,matsubara_freq,self_ene,vmu):
-        ndiv_tau = len(matsubara_freq)
-        nflavor = self.nflavor_
-        G_latt=np.zeros((ndiv_tau,nflavor,nflavor),dtype=complex)
-        Nk_reduced = self.Nk_
-        digmat = np.zeros((nflavor,nflavor),dtype=complex)
-        G_latt[:,:,:] = 0.0+0.0J
-        tmparray = np.zeros((Nk_reduced,nflavor,nflavor),dtype=complex)
-        inv = np.linalg.inv
-        for im in xrange(ndiv_tau):
-            digmat[:,:] = (1J*matsubara_freq[im]+vmu)*np.identity(nflavor)-self_ene[im,:,:]
-            ksum = 0
-            for ik in xrange(Nk_reduced):
-                tmparray[ik,:,:] = digmat[:,:]-self.Hk_list_[ik,:,:]
-            for ik in xrange(Nk_reduced):
-                G_latt[im,:,:] += inv(tmparray[ik,:,:])*self.weight_k_[ik]
-        G_latt[:,:,:] /= np.sum(self.weight_k_)
-
-        tau_tmp = beta-1E-4*(beta/ndiv_tau)
-        ztmp = 0.0
-        for im in range(ndiv_tau):
-            for iorb in range(nflavor):
-                ztmp += (G_latt[im,iorb,iorb]+1J/matsubara_freq[im])*np.exp(-1J*matsubara_freq[im]*tau_tmp)
-        rtmp = 2.0*ztmp.real/beta-0.5*nflavor
-    
-        return G_latt,-rtmp
-
     def calc_Gk_omega0(self,beta,self_ene,vmu,matsubara_freq,Hk_list):
         nflavor = self.nflavor_
         Nk = Hk_list.shape[0]
