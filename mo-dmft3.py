@@ -182,7 +182,7 @@ def calc_diff(self_ene_dmp_in):
     sys.stdout.flush()
     hyb_tau,high_freq_tail,hyb_rest = fourie_transformer.hyb_freq_to_tau(hyb,ndiv_tau,vbeta,cutoff_fourie)
     if 'ASSUME_REAL' in app_parms and app_parms['ASSUME_REAL'] != 0:
-        hyb_tau = hyb_tau.real
+        hyb_tau = np.array(hyb_tau.real, dtype=complex)
     time2 = time.time()
     print "Transforming Delta(omega_n) to Delta(tau) took ", time2-time1, " sec."
     np.save(app_parms["prefix"]+"-hyb", hyb)

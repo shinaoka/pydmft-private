@@ -135,15 +135,21 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
 
     start = isbl*nflavor_sbl
     end = (isbl+1)*nflavor_sbl
+    assume_real = 'ASSUME_REAL' in app_parms and app_parms['ASSUME_REAL'] != 0
 
     #### impurity solver ####
     path_input = app_parms['PREFIX_IMP_SLV_WORK_FILE']+'_input_hyb_sbl'+str(isbl)
     path_hyb = app_parms['PREFIX_IMP_SLV_WORK_FILE']+'_F_sbl'+str(isbl)
 
+    ### apply projectors on hyb_tau ###
+    hyb_tau_sbl = 1.*hyb_tau[:,start:end,start:end]
+    apply_projectors(local_projectors, hyb_tau_sbl)
+
     #Generate input files...
     parms=OrderedDict()
-    if 'ASSUME_REAL' in app_parms and app_parms['ASSUME_REAL'] != 0:
+    if assume_real:
         parms['ALGORITHM'] = "real-matrix"
+        hyb_tau_sbl = np.array(hyb_tau_sbl.real, dtype=complex)
     else:
         parms['ALGORITHM'] = "complex-matrix"
     parms['N_TAU'] = app_parms['NMATSUBARA']
@@ -165,7 +171,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
             h_mat = imp_model.get_moment(1)[start:end,start:end]
         elif app_parms['BASIS_ROT_TYPE']==1:
             print "Diagonalizing integrated Delta..."
-            h_mat = integrate_hyb(hyb_tau[:,start:end,start:end])
+            h_mat = integrate_hyb(hyb_tau_sbl)
         elif app_parms['BASIS_ROT_TYPE']==2:
             print "Diagonalizing Delta(omega_0)..."
             hyb0 = hyb[:,start:end,start:end]
@@ -173,26 +179,12 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
 
         apply_projectors_2d(local_projectors, h_mat)
 
-	if 'PREVENT_MIXING_SPIN_SECTORS_IN_BASIS_ROT' in app_parms and app_parms['PREVENT_MIXING_SPIN_SECTORS_IN_BASIS_ROT'] != 0:
-            print "Using PREVENT_MIXING_SPIN_SECTORS_IN_BASIS_ROT..."
-            Hsbl = h_mat.reshape([nflavor_sbl/2,2,nflavor_sbl/2,2])
-            evals_up,evecs_up = eigh_ordered(Hsbl[:,0,:,0]) #Diagonal H0_{up,up}
-            rotmat_Delta = np.zeros((nflavor_sbl/2,2,nflavor_sbl/2,2),dtype=complex)
-            rotmat_Delta[:,0,:,0] = 1.*evecs_up
-            rotmat_Delta[:,1,:,1] = 1.*evecs_up
-            rotmat_Delta = rotmat_Delta.reshape([nflavor_sbl,nflavor_sbl])
-        else:
-            evals,evecs = diagonalize_with_projetion(h_mat,local_projectors)
-            rotmat_Delta = 1.*evecs
+        evals,evecs = diagonalize_with_projetion(h_mat,local_projectors)
+        rotmat_Delta = 1.*evecs
         print "Using alpha=", float(app_parms['BASIS_ROT'])
         rotmat_Delta = unitary_mat_power(rotmat_Delta, float(app_parms['BASIS_ROT'])) 
 
     #Write hyb func
-    if 'DIAG_HYB' in app_parms and app_parms['DIAG_HYB'] != 0:
-        hyb_tau_sbl = diagonalize_hyb(hyb_tau[:,start:end,start:end], rotmat_Delta)
-    else:
-        hyb_tau_sbl = 1.*hyb_tau[:,start:end,start:end]
-
     hyb_f = open(path_hyb,'w')
     for i in range(ntau+1):
         for iflavor in range(nflavor_sbl):
@@ -203,6 +195,8 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     #Local H0
     parms['HOPPING_MATRIX_INPUT_FILE'] = path_input+'-hopping_matrix.txt'
     hopping = hermitialize(imp_model.get_H0()[start:end,start:end]-mu*np.identity(nflavor_sbl))
+    if assume_real:
+        hopping = np.array(hopping.real,dtype=complex)
     apply_projectors_2d(local_projectors, hopping)
     write_matrix(path_input+'-hopping_matrix.txt', hermitialize(hopping))
 
