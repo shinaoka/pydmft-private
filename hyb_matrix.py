@@ -98,7 +98,7 @@ def symmetrize_G_tau(app_parms, G_tau):
         nsymm = app_parms['SYMM_MAT'].shape[0]
         assert app_parms['SYMM_MAT'].shape[1]==nflavor_sbl
         assert app_parms['SYMM_MAT'].shape[2]==nflavor_sbl
-        print "Symmetrizing G_tau..."
+        print "Symmetrizing G_tau...", nsymm
 
         G_tau_symm = np.zeros((nsymm+1,ntau+1,nflavor_sbl,nflavor_sbl),dtype=complex)
 
@@ -169,7 +169,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
         if (not 'BASIS_ROT_TYPE' in app_parms) or ('BASIS_ROT_TYPE' in app_parms and app_parms['BASIS_ROT_TYPE']==0):
             print "Diagonalizing local Hamiltonian..."
             h_mat = imp_model.get_moment(1)[start:end,start:end]
-        elif app_parms['BASIS_ROT_TYPE']==1:
+        else:
             print "Diagonalizing integrated Delta..."
             h_mat = integrate_hyb(hyb_tau_sbl)
         elif app_parms['BASIS_ROT_TYPE']==2:
@@ -288,7 +288,12 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     self_ene_sbl = np.zeros((ntau,nflavor_sbl,nflavor_sbl),dtype=complex)
     for im in range(ntau):
         self_ene_sbl[im,:,:]=invG0[im,:,:]-inv(G_imp[im,:,:])
+
+    #Symmetrizing self energy
+    self_ene_sbl = symmetrize_G_tau(app_parms, self_ene_sbl)
+
     result["self_ene"] = self_ene_sbl
+    #print "debug ", np.diag(self_ene_sbl[0,:,:])
 
     time4 = time.time()
 

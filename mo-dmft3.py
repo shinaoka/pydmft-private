@@ -12,7 +12,7 @@ import subprocess
 import fourier_transform as ft
 from lib import *
 import scipy.optimize as sciopt
-from hyb_matrix import call_hyb_matrix
+from hyb_matrix import call_hyb_matrix,symmetrize_G_tau
 from ct_int import call_ct_int
 from h5dump import *
 import copy
@@ -106,6 +106,13 @@ def calc_diff(self_ene_dmp_in):
     for iflavor in range(nflavor):
         for iflavor2 in range(nflavor):
             self_ene_in[:,iflavor,iflavor2] = self_ene_dmp_in[:,iflavor,iflavor2]/dmp_fact
+
+    #Symmetrize self energy
+    #self_ene_in = self_ene_in.reshape((ndiv_tau, nsbl, nflavor_sbl, nsbl, nflavor_sbl))
+    #for isbl in xrange(nsbl):
+        #self_ene_in[:,isbl,:,isbl,:] = 1.0*symmetrize_G_tau(app_parms, self_ene_in[:,isbl,:,isbl,:])
+        #print self_ene_in[0,isbl,0,isbl,2], self_ene_in[0,isbl,0,isbl,4]
+    #self_ene_in = self_ene_in.reshape((ndiv_tau, nflavor, nflavor))
 
     #### Lattice Green function ####
     # Make sure we recompute G_lattice after updating vmu.
