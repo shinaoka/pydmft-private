@@ -169,7 +169,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
         if (not 'BASIS_ROT_TYPE' in app_parms) or ('BASIS_ROT_TYPE' in app_parms and app_parms['BASIS_ROT_TYPE']==0):
             print "Diagonalizing local Hamiltonian..."
             h_mat = imp_model.get_moment(1)[start:end,start:end]
-        else:
+        elif app_parms['BASIS_ROT_TYPE']==1:
             print "Diagonalizing integrated Delta..."
             h_mat = integrate_hyb(hyb_tau_sbl)
         elif app_parms['BASIS_ROT_TYPE']==2:
