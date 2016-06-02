@@ -5,10 +5,12 @@ nf = 2
 
 beta = 10.0
 ntau = 10
-E = np.array([0.2, 0.5])
-c1 = np.array([[1.0, 0.0],[0.0,2.0]],dtype=complex)
-c2 = np.array([[0.2, 0.1+0.1J],[0.1-0.1J,0.5]],dtype=complex)
-c3 = 0.1*c2
+#E = np.array([0.2, 0.5])
+#c1 = np.array([[1.0, 0.0],[0.0,2.0]],dtype=complex)
+c1 = np.array([[0.0, 0.0],[0.0,0.0]],dtype=complex)
+#c3 = 0.1*c2
+c2 = np.array([[0.0, 0.0],[0.0,0.0]],dtype=complex)
+c3 = np.array([[1.0, 0.0+0.0],[0.0+0.0, 1.0]],dtype=complex)
 
 theta = 0.2*np.pi
 c = np.cos(theta)

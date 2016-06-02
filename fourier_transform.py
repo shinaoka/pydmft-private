@@ -37,117 +37,26 @@ def ft_to_tau_hyb(ndiv_tau, beta, matsubara_freq, tau, c1, c2, c3, data_n, data_
      data_tau[it,:,:] += data_tau_conj[it,:,:] -0.5*c1 +0.25*c2*(-beta+2*tau_tmp) +0.25*c3*(beta-tau_tmp)*tau_tmp
  return tail, data_rest
 
-
-#estimate tail
-def estimate_tail(ndiv_tau, beta, matsubara_freq, tau, c1_0, data_n):
-  cutoff = int(3*ndiv_tau/4)
-  nflavor = c1_0.shape[0]
-
-  tail = np.zeros((ndiv_tau,nflavor,nflavor),dtype=complex)
-  for im in range(ndiv_tau):
-    tail[im,:,:] = c1_0/(1J*matsubara_freq[im])
-  xdata = matsubara_freq[cutoff:ndiv_tau]
-  ydata = (data_n-tail)[cutoff:ndiv_tau,:,:]
-
-  def tail_func_real(x, c2_real, c3_imag):
-    return - c2_real/x**2 - c3_imag/x**3
-
-  def tail_func_imag(x, c2_imag, c3_real):
-    return - c2_imag/x**2 + c3_real/x**3
-
-  #def tail_func_real(x, c1_imag, c2_real, c3_imag):
-    #return  c1_imag/x - c2_real/x**2 - c3_imag/x**3
-
-  #def tail_func_imag(x, c1_real, c2_imag, c3_real):
-    #return -c1_real/x - c2_imag/x**2 + c3_real/x**3
-
-  #def tail_func(x, a, b, c):
-     #return a/(1J*x)+b/((1J*x)**2)+c/((1J*x)**3)
-
-  #c1 = np.zeros((nflavor,nflavor),dtype=complex)
-  c1 = 1.*c1_0
-  c2 = np.zeros((nflavor,nflavor),dtype=complex)
-  c3 = np.zeros((nflavor,nflavor),dtype=complex)
-  for flavor in xrange(nflavor):
-    for flavor2 in xrange(nflavor):
-
-      p0 = [0.0, 0.0]
-      popt,pcov = curve_fit(tail_func_real, xdata, ydata[:,flavor,flavor2].real, p0)
-      c2[flavor,flavor2] += popt[0]
-      c3[flavor,flavor2] += 1J*popt[1]
-
-      p0 = [0.0, 0.0]
-      popt,pcov = curve_fit(tail_func_imag, xdata, ydata[:,flavor,flavor2].imag, p0)
-      c2[flavor,flavor2] += 1J*popt[0]
-      c3[flavor,flavor2] += popt[1]
-
-  return c1,c2,c3
-
-#Estimate c2, c2 by a fit
-def ft_to_tau_hyb_with_fitted_tail(ndiv_tau, beta, matsubara_freq, tau, c1_0, data_n, data_tau):
+#Extrapolation
+def ft_to_tau_hyb_with_extrapolation(ndiv_tau, beta, matsubara_freq, tau, c1_0, data_n, data_tau):
  nflavor = c1_0.shape[0]
 
- c1, c2, c3 = estimate_tail(ndiv_tau, beta, matsubara_freq, tau, c1_0, data_n)
+ c2 = np.zeros((nflavor,nflavor),dtype=complex)
+ c3 = np.zeros((nflavor,nflavor),dtype=complex)
 
- #tail correction
- tail = np.zeros((ndiv_tau,nflavor,nflavor),dtype=complex)
- for im in range(ndiv_tau):
-     tail[im,:,:] = c1/(1J*matsubara_freq[im])+c2/((1J*matsubara_freq[im])**2)+c3/((1J*matsubara_freq[im])**3)
- data_rest = data_n - tail
- assert is_hermitian(c1)
+ cutoff0 = np.amax([ndiv_tau/2, ndiv_tau-100])
+ data_tau0 = np.zeros_like(data_tau)
+ ft_to_tau_hyb(ndiv_tau, beta, matsubara_freq, tau, c1_0, c2, c3, data_n, data_tau0, cutoff0)
 
- y = np.zeros((2*ndiv_tau,nflavor,nflavor),dtype=complex)
- for im in range(ndiv_tau):
-     y[2*im+1,:,:] = data_rest[im,:,:]
- y *= 1.0/beta
+ cutoff1 = ndiv_tau
+ data_tau1 = np.zeros_like(data_tau)
+ ft_to_tau_hyb(ndiv_tau, beta, matsubara_freq, tau, c1_0, c2, c3, data_n, data_tau1, cutoff1)
 
- data_tau[:,:,:] = np.fft.fft(y,axis=0)[0:ndiv_tau+1,:,:]
- data_tau_conj = data_tau.transpose((0,2,1)).conj()
+ x0 = 1.0/cutoff0
+ x1 = 1.0/cutoff1
+ data_tau[:,:,:] = 1.*((data_tau0*x1-data_tau1*x0)/(x1-x0))
  for it in range(ndiv_tau+1):
-     tau_tmp=tau[it]
-     data_tau[it,:,:] += data_tau_conj[it,:,:] -0.5*c1 +0.25*c2*(-beta+2*tau_tmp) +0.25*c3*(beta-tau_tmp)*tau_tmp
- return tail, data_rest
-
-def G_tau_to_freq(ntau,beta,G_tau):
-    assert len(G_tau)==ntau+1
-
-    f_freq = to_freq_fermionic_real_field(ntau,beta,ntau,G_tau.real,ntau)+1J*to_freq_fermionic_real_field(ntau,beta,ntau,G_tau.imag,ntau)
-    assert len(f_freq)==ntau
-    return f_freq
-
-def G_tau_to_freq2(ntau,beta,G_tau,cutoff):
-    assert G_tau.shape[0]==ntau+1
-    assert G_tau.shape[1]== G_tau.shape[2]
-    nflavor = G_tau.shape[1]
-
-    G_tau_ex = np.zeros((2*ntau,nflavor,nflavor),dtype=complex)
-    G_tau_ex[0:ntau+1,:,:] = G_tau[:,:,:]
-    G_tau_ex[(ntau+1):,:,:] = -G_tau[1:ntau,:,:]
-
-    #1/iomega correction
-    for itau in xrange(ntau+1):
-        for flavor in xrange(nflavor):
-            G_tau_ex[itau,flavor,flavor] += 0.5
-
-    for itau in xrange(ntau+1,2*ntau):
-        for flavor in xrange(nflavor):
-            G_tau_ex[itau,flavor,flavor] += -0.5
-
-    y = np.fft.ifft(G_tau_ex,axis=0)
-
-    #for itau in xrange(2*ntau):
-        #print itau, G_tau_ex[itau,0,0].real
-
-    G_omega = np.zeros((ntau,nflavor,nflavor),dtype=complex)
-    for im in xrange(cutoff):
-        G_omega[im,:,:] = beta*y[2*im+1,:,:]
-
-    omega_n = np.array([(2*n+1)*np.pi/beta for n in xrange(ntau)])
-    for im in xrange(ntau):
-        for flavor in xrange(nflavor):
-           G_omega[im,flavor,flavor] += 1/(1J*omega_n[im])
-
-    return G_omega
+     data_tau[it,:,:] = 0.5*(data_tau[it,:,:]+data_tau[it,:,:].conjugate().transpose())
 
 class FourieTransformer:
     def __init__(self, model):
@@ -194,9 +103,7 @@ class FourieTransformer:
         for isbl in xrange(nsbl):
             start = nflavor_sbl*isbl
             end = nflavor_sbl*(isbl+1)
-            tail,rest = ft_to_tau_hyb_with_fitted_tail(ntau, beta, matsubara_freq, tau, self.c1_[isbl,:], hyb[:,start:end,start:end], hyb_tau[:,start:end,start:end])
-            high_freq_tail[:,start:end,start:end] = 1.*tail
-            hyb_rest[:,start:end,start:end] = 1.*rest
+            ft_to_tau_hyb_with_extrapolation(ntau, beta, matsubara_freq, tau, self.c1_[isbl,:], hyb[:,start:end,start:end], hyb_tau[:,start:end,start:end])
         return hyb_tau, high_freq_tail, hyb_rest
 
     def G_freq_to_tau(self, G, ntau, beta, ncut):
@@ -207,8 +114,8 @@ class FourieTransformer:
             matsubara_freq[im]=((2*im+1)*np.pi)/beta
         for it in range(ntau+1):
             tau[it]=(beta/ntau)*it
-        high_freq_tail,G_rest = ft_to_tau_hyb_with_fitted_tail(ntau, beta, matsubara_freq, tau, self.c1_G_, G, G_tau)
-        return G_tau, high_freq_tail, G_rest
+        ft_to_tau_hyb_with_extrapolation(ntau, beta, matsubara_freq, tau, self.c1_G_, G, G_tau)
+        return G_tau
 
 def to_freq_bosonic_real_field(ndiv_tau_smpl,beta,n_freq,f_tau,cutoff_rest):
     n_tau_dense = 2*n_freq

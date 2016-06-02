@@ -126,7 +126,7 @@ def calc_diff(self_ene_dmp_in):
             nite = app_parms['N_CHEM_LOOP']
         for i_chem in range(nite): #By default, we do it 5 times.
             G_latt,tote_tmp = imp_model.calc_Glatt(vbeta,matsubara_freq,self_ene_in,vmu)
-            G_latt_tau,G_latt_tail,G_latt_rest = fourie_transformer.G_freq_to_tau(G_latt,ndiv_tau,vbeta,cutoff_fourie)
+            G_latt_tau = fourie_transformer.G_freq_to_tau(G_latt,ndiv_tau,vbeta,cutoff_fourie)
     
             ntot = 0.0
             for ie in range(nflavor):
@@ -137,7 +137,7 @@ def calc_diff(self_ene_dmp_in):
             print "new mu = ", vmu
             sys.stdout.flush()
     G_latt,tote_tmp = imp_model.calc_Glatt(vbeta,matsubara_freq,self_ene_in,vmu)
-    G_latt_tau,G_latt_tail,G_latt_rest = fourie_transformer.G_freq_to_tau(G_latt,ndiv_tau,vbeta,cutoff_fourie)
+    G_latt_tau = fourie_transformer.G_freq_to_tau(G_latt,ndiv_tau,vbeta,cutoff_fourie)
     ntot = 0.0
     for ie in range(nflavor):
         ntot += -G_latt_tau[-1,ie,ie].real
@@ -150,10 +150,7 @@ def calc_diff(self_ene_dmp_in):
     sys.stdout.flush()
     np.save(app_parms["prefix"]+"-G_latt", G_latt)
     np.save(app_parms["prefix"]+"-G_latt_tau", G_latt_tau)
-    np.save(app_parms["prefix"]+"-G_latt_tail", G_latt_tail)
-    np.save(app_parms["prefix"]+"-G_latt_rest", G_latt_rest)
 
-    #assert np.amax(np.abs(G_latt-G_latt_tail-G_latt_rest))<1e-10
     for it in range(ndiv_tau+1):
         assert is_hermitian(G_latt_tau[it,:,:])
 
