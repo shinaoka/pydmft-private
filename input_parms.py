@@ -4,7 +4,6 @@ import numpy as np
 #import pyalps.mpi as mpi     # MPI library
 import sys
 import re
-from effective_int import *
 
 def read_input_parms(fname):
     parms = {}

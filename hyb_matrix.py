@@ -121,7 +121,6 @@ def symmetrize_G_tau(app_parms, G_tau):
     return G_tau_new
 
 #hyb_tau: Delta(\tau), 
-# Note: when we convert Delta to F, we have to exchange flavor indices in Delta and rotmat.
 def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_tau, hyb, invG0, mu, isbl, local_projectors):
     time1 = time.time()
 
@@ -148,17 +147,18 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     #Generate input files...
     parms=OrderedDict()
     if assume_real:
-        parms['ALGORITHM'] = "real-matrix"
+        parms['algorithm'] = "real-matrix"
         hyb_tau_sbl = np.array(hyb_tau_sbl.real, dtype=complex)
     else:
-        parms['ALGORITHM'] = "complex-matrix"
-    parms['N_TAU'] = app_parms['NMATSUBARA']
-    parms['BETA'] = app_parms['BETA']
-    parms['SITES'] = norb_sbl
-    parms['SPINS'] = 2
-    parms['FLAVORS'] = nflavor_sbl
-    parms['F_INPUT_FILE'] = path_hyb
-    parms['BASIS_INPUT_FILE'] = path_hyb+'-rot_sbl'+str(isbl)
+        parms['algorithm'] = "complex-matrix"
+    parms['measurement.G1.n_tau'] = app_parms['NMATSUBARA']
+    parms['measurement.G1.n_matsubara'] = app_parms['NMATSUBARA']
+    parms['model.beta'] = app_parms['BETA']
+    parms['model.sites'] = norb_sbl
+    parms['model.spins'] = 2
+    parms['model.delta_input_file'] = path_hyb
+    parms['model.n_tau_hyb'] = app_parms['NMATSUBARA']
+    parms['model.basis_input_file'] = path_hyb+'-rot_sbl'+str(isbl)
 
     #Basis rotation for \Delta (not F)
     if app_parms['BASIS_ROT']==0:
@@ -189,11 +189,11 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     for i in range(ntau+1):
         for iflavor in range(nflavor_sbl):
             for iflavor2 in range(nflavor_sbl):
-                print >>hyb_f, i, iflavor, iflavor2, -hyb_tau_sbl[ntau-i,iflavor2,iflavor].real, -hyb_tau_sbl[ntau-i,iflavor2,iflavor].imag
+                print >>hyb_f, i, iflavor, iflavor2, hyb_tau_sbl[i, iflavor, iflavor2].real, hyb_tau_sbl[i, iflavor, iflavor2].imag
     hyb_f.close()
 
     #Local H0
-    parms['HOPPING_MATRIX_INPUT_FILE'] = path_input+'-hopping_matrix.txt'
+    parms['model.hopping_matrix_input_file'] = path_input+'-hopping_matrix.txt'
     hopping = hermitialize(imp_model.get_H0()[start:end,start:end]-mu*np.identity(nflavor_sbl))
     if assume_real:
         hopping = np.array(hopping.real,dtype=complex)
@@ -201,7 +201,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     write_matrix(path_input+'-hopping_matrix.txt', hermitialize(hopping))
 
     #U tensor
-    parms['U_TENSOR_INPUT_FILE'] = path_input+'-Uijkl.txt'
+    parms['model.coulomb_tensor_input_file'] = path_input+'-Uijkl.txt'
     write_Utensor_cthyb_alpscore(path_input+'-Uijkl.txt', imp_model.get_Uijkl())
 
     #Single-particle basis rotation for Delta
@@ -216,7 +216,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
 
     #Set random seed
     random.seed()
-    parms['SEED'] = random.randint(0,10000)
+    parms['seed'] = random.randint(0,10000)
 
     #Write parameters
     input_f = open(path_input+'.ini','w')
