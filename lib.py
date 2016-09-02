@@ -2,6 +2,7 @@ import numpy as np
 from math import pi
 import sys
 import h5py
+import scipy.special
 from lib import *
 
 def average_complex(data,axis=0):
@@ -386,3 +387,11 @@ def diagonalize_with_projetion(mat,projectors):
         offset += dim
     assert(is_unitary(evecs))
     return evals, evecs
+
+def compute_Tnl(n_matsubara, n_legendre):
+    Tnl = np.zeros((n_matsubara, n_legendre), dtype=complex)
+    for n in xrange(n_matsubara):
+        sph_jn = scipy.special.sph_jn(n_legendre, (n+0.5)*np.pi)[0]
+        for il in xrange(n_legendre):
+            Tnl[n,il] = ((-1)**n) * ((1J)**(il+1)) * np.sqrt(2*il + 1.0) * sph_jn[il]
+    return Tnl
