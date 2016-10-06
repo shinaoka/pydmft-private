@@ -21,11 +21,12 @@ class Wannier90:
             for i in xrange(self.Nwann):
                 for j in xrange(self.Nwann):
                     i1,i2,i3,i4,i5,r1,r2 = f.readline().split()
-                    #self.HamR[int(i4)-1,int(i5)-1,ir] = (r1 + 1J * r2)/(1.*ndgen[ir])
                     self.HamR[ir, int(i4)-1,int(i5)-1] = (float(r1) + 1J * float(r2))/(1.*ndgen[ir]) 
             self.irvec[ir,0] = i1
             self.irvec[ir,1] = i2
             self.irvec[ir,2] = i3
+
+        self.HamR = self.HamR.reshape((self.nrpts, 2, self.Nwann/2, 2, self.Nwann/2)).transpose((0,2,1,4,3)).reshape((self.nrpts, self.Nwann, self.Nwann))
      
     def get_Hk(self, kvec):
         Hk = np.zeros((self.Nwann,self.Nwann,),dtype=complex)
