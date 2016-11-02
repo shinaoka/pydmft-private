@@ -21,8 +21,10 @@ def dump_results_modmft(app_parms, isc, obj, exclude_list=[]):
 
     #write all instances in obj (only the last iteration)
     if nsc>1:
-        del f['results']
-        del f['NUM_RESULTS']
+        if 'results' in f:
+            del f['results']
+        if 'NUM_RESULTS' in f:
+            del f['NUM_RESULTS']
     for k,v in vars(obj).items():
         if k in exclude_list:
             continue

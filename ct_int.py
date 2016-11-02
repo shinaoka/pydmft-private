@@ -163,7 +163,7 @@ def solve_sbl_imp_model_spin_orbit(app_parms, imp_model, fourie_transformer, tau
     else:
         rotmat = np.identity(2*norb_sbl)
     parms['GENERAL_U_MATRIX_FILE'] = path_input+'-Uijkl.txt'
-    H0_corr = Uijkl.write_Uijkl(imp_model.get_Uijkl(), rotmat, parms['GENERAL_U_MATRIX_FILE'], False).reshape(2*norb_sbl,2*norb_sbl)
+    H0_corr = Uijkl.write_Uijkl(0.5*imp_model.get_Uijkl(), rotmat, parms['GENERAL_U_MATRIX_FILE'], False).reshape(2*norb_sbl,2*norb_sbl)
 
     #Incorpolate the correction term into the cavity function (coming from auxiliary fields)
     invG0_omega_symm = symmetrize_G_tau(app_parms, invG0_omega)
@@ -330,7 +330,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, invG
     else:
         rotmat = np.identity(2*norb_sbl)
     parms['GENERAL_U_MATRIX_FILE'] = path_input+'-Uijkl.txt'
-    H0_corr = Uijkl.write_Uijkl(imp_model.get_Uijkl(), rotmat, parms['GENERAL_U_MATRIX_FILE'], True).reshape(2*norb_sbl,2*norb_sbl)
+    H0_corr = Uijkl.write_Uijkl(0.5*imp_model.get_Uijkl(), rotmat, parms['GENERAL_U_MATRIX_FILE'], True).reshape(2*norb_sbl,2*norb_sbl)
 
     #Incorpolate the correction term into the cavity function (coming from auxiliary fields)
     invG0_omega_symm = symmetrize_G_tau(app_parms, invG0_omega)

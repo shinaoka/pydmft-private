@@ -371,7 +371,6 @@ def generate_U_tensor_SK2(n_orb, U, Up, JH):
 
     return U_tensor.reshape((2*n_orb,2*n_orb,2*n_orb,2*n_orb))
 
-
 #Order of operators: c^\dagger_{iorb1} c^\dagger_{iorb2} c_{iorb3} c_{iorb4}
 def generate_U_tensor_SK_density(n_orb, U, JH):
     U_tensor = np.zeros((n_orb,2,n_orb,2,n_orb,2,n_orb,2),dtype=complex)
