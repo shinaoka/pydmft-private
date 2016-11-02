@@ -189,7 +189,10 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     for i in range(ntau+1):
         for iflavor in range(nflavor_sbl):
             for iflavor2 in range(nflavor_sbl):
-                print >>hyb_f, i, iflavor, iflavor2, hyb_tau_sbl[i, iflavor, iflavor2].real, hyb_tau_sbl[i, iflavor, iflavor2].imag
+                if iflavor != iflavor2:
+                    print >>hyb_f, i, iflavor, iflavor2, hyb_tau_sbl[i, iflavor, iflavor2].real, hyb_tau_sbl[i, iflavor, iflavor2].imag
+                else:
+                    print >>hyb_f, i, iflavor, iflavor2, -np.abs(hyb_tau_sbl[i, iflavor, iflavor2].real), 0.0
     hyb_f.close()
 
     #Local H0
@@ -259,8 +262,6 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     data = hf['/gf/data'].value
     G_imp = data[:,:,:,0]+data[:,:,:,1]*1J
     
-    hf.close()
-
     #Replace equal-time Green's function by average density 
     #G_tau_prj = projection(G_tau,rotmat_Delta,2*norb_sbl)
     #for iflavor in range(nflavor_sbl):
@@ -283,6 +284,10 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
         obs[keys[i]+'_error'] = errors[i]
 
     obs['rotmat_Delta_sbl'+str(isbl)] = rotmat_Delta
+
+    obs['equal_time_G1'] = hf['/EQUAL_TIME_G1'].value
+
+    hf.close()
 
     #Compute self energy
     self_ene_sbl = np.zeros((ntau,nflavor_sbl,nflavor_sbl),dtype=complex)
