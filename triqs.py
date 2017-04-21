@@ -89,3 +89,12 @@ def generate_U_tensor_SK(n_orb, U, Up, JH):
                     U_tensor[iorb1, iorb2, iorb4, iorb3] += coeff
 
     return U_tensor
+
+def projection(self_ene,evecs,norb):
+    self_ene_eigen = numpy.zeros_like(self_ene)
+    for ib in range(norb):
+        for ib2 in range(norb):
+            for iorb in range(norb):
+                for iorb2 in range(norb):
+                    self_ene_eigen[:,ib,ib2] += self_ene[:,iorb,iorb2]*numpy.conj(evecs[iorb,ib])*evecs[iorb2,ib2]
+    return self_ene_eigen
