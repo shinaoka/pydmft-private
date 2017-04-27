@@ -285,7 +285,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
 
     obs['rotmat_Delta_sbl'+str(isbl)] = rotmat_Delta
 
-    obs['equal_time_G1'] = hf['/EQUAL_TIME_G1'].value
+    #obs['equal_time_G1'] = hf['/EQUAL_TIME_G1'].value
     obs['G1_legendre'] = hf['/G1_LEGENDRE'].value
 
     hf.close()
