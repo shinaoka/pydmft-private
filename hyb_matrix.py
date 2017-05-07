@@ -120,6 +120,25 @@ def symmetrize_G_tau(app_parms, G_tau):
                 G_tau_new[:,2*iorb+1,2*iorb] = 0.0
     return G_tau_new
 
+def symmetrize_hloc(app_parms, hloc):
+    nflavor_sbl = hloc.shape[1]
+
+    if 'SYMM_MAT' in app_parms:
+        nsymm = app_parms['SYMM_MAT'].shape[0]
+        assert app_parms['SYMM_MAT'].shape[1]==nflavor_sbl
+        assert app_parms['SYMM_MAT'].shape[2]==nflavor_sbl
+        print "Symmetrizing hloc...", nsymm
+
+        hloc_symm = np.zeros((nsymm+1,nflavor_sbl,nflavor_sbl),dtype=complex)
+        symm_mat = app_parms['SYMM_MAT']
+
+        hloc_symm[0,:,:] = hloc
+        for isymm in xrange(nsymm):
+            hloc_symm[isymm+1,:,:] = np.dot(np.dot(symm_mat[isymm,:,:].conjugate().transpose(), hloc), symm_mat[isymm,:,:])
+        return np.average(hloc_symm, axis=0)
+    else:
+        return hloc
+
 #hyb_tau: Delta(\tau), 
 def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_tau, hyb, invG0, mu, isbl, local_projectors):
     time1 = time.time()
@@ -160,6 +179,9 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     parms['model.n_tau_hyb'] = app_parms['NMATSUBARA']
     parms['model.basis_input_file'] = path_hyb+'-rot_sbl'+str(isbl)
 
+    #symmetrize hloc
+    hloc = symmetrize_hloc(app_parms, hermitialize(imp_model.get_H0()[start:end,start:end]))
+
     #Basis rotation for \Delta (not F)
     if app_parms['BASIS_ROT']==0:
         rotmat_Delta = np.identity(nflavor_sbl,dtype=complex)
@@ -168,21 +190,25 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
     elif float(app_parms['BASIS_ROT'])>0.0: #Diagonalizing sublattice H0
         if (not 'BASIS_ROT_TYPE' in app_parms) or ('BASIS_ROT_TYPE' in app_parms and app_parms['BASIS_ROT_TYPE']==0):
             print "Diagonalizing local Hamiltonian..."
-            h_mat = imp_model.get_moment(1)[start:end,start:end]
+            mat_to_be_diag = hloc
         elif app_parms['BASIS_ROT_TYPE']==1:
             print "Diagonalizing integrated Delta..."
-            h_mat = integrate_hyb(hyb_tau_sbl)
+            mat_to_be_diag = integrate_hyb(hyb_tau_sbl)
         elif app_parms['BASIS_ROT_TYPE']==2:
             print "Diagonalizing Delta(omega_0)..."
             hyb0 = hyb[:,start:end,start:end]
-            h_mat = np.dot(hyb0.conjugate().transpose(),hyb0)
+            mat_to_be_diag = np.dot(hyb0.conjugate().transpose(),hyb0)
+        else:
+            raise RuntimeError("Unknown diagonalization rot type")
 
-        apply_projectors_2d(local_projectors, h_mat)
+        apply_projectors_2d(local_projectors, mat_to_be_diag)
 
-        evals,evecs = diagonalize_with_projetion(h_mat,local_projectors)
+        evals,evecs = diagonalize_with_projetion(mat_to_be_diag, local_projectors)
         rotmat_Delta = 1.*evecs
         print "Using alpha=", float(app_parms['BASIS_ROT'])
         rotmat_Delta = unitary_mat_power(rotmat_Delta, float(app_parms['BASIS_ROT'])) 
+    else:
+        raise RuntimeError("Unknown rot type")
 
     #Write hyb func
     hyb_f = open(path_hyb,'w')
@@ -197,7 +223,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
 
     #Local H0
     parms['model.hopping_matrix_input_file'] = path_input+'-hopping_matrix.txt'
-    hopping = hermitialize(imp_model.get_H0()[start:end,start:end]-mu*np.identity(nflavor_sbl))
+    hopping = hermitialize(hloc-mu*np.identity(nflavor_sbl))
     if assume_real:
         hopping = np.array(hopping.real,dtype=complex)
     apply_projectors_2d(local_projectors, hopping)
@@ -228,6 +254,7 @@ def solve_sbl_imp_model(app_parms, imp_model, fourie_transformer, tau_mesh, hyb_
 
     #if (os.path.exists(path_input+'.out.h5')):
       #os.remove(path_input+'.out.h5')
+    sys.stdout.flush()
 
     output_f = open('output_'+path_input, 'w')
     cmd=app_parms['CMD_MPI']+' '+str(app_parms['N_MPI_PROCESS'])+' '+str(app_parms['HYB_PATH'])+' '+path_input+'.ini'
