@@ -58,7 +58,8 @@ nflavor_sbl=nflavor/nsbl
 PM=True
 vmix=1.0
 vmu=app_parms["MU"]
-tote=app_parms["N_ELEC"]
+if "N_ELEC" in app_parms:
+    tote=app_parms["N_ELEC"]
 vbeta=app_parms["BETA"]
 vconverged=app_parms["CONVERGED"]
 ndiv_tau=app_parms["NMATSUBARA"]
