@@ -61,9 +61,9 @@ vmu=app_parms["MU"]
 if "N_ELEC" in app_parms:
     tote=app_parms["N_ELEC"]
 vbeta=app_parms["BETA"]
-vconverged=app_parms["CONVERGED"]
+#vconverged=app_parms["CONVERGED"]
 ndiv_tau=app_parms["NMATSUBARA"]
-cutoff_fourie=app_parms["CUTOFF_FOURIE"]
+cutoff_fourie=app_parms["NMATSUBARA"]
 
 matsubara_freq=np.zeros((ndiv_tau,),dtype=float)
 tau=np.zeros((ndiv_tau+1,),dtype=float)
@@ -295,5 +295,5 @@ dmft_result = DMFTResult()
 mix = 0.5
 if 'mix' in app_parms:
     mix = app_parms['mix']
-sciopt.linearmixing(calc_diff,self_ene_dmp_init,alpha=mix,iter=app_parms["MAX_IT"],f_rtol=app_parms["CONVERGED"],line_search=None,verbose=True)
+sciopt.linearmixing(calc_diff,self_ene_dmp_init,alpha=mix,iter=app_parms["MAX_IT"],f_rtol=0.000001,line_search=None,verbose=True)
 #sciopt.anderson(calc_diff,self_ene_dmp_init,iter=app_parms["MAX_IT"], f_rtol=app_parms["CONVERGED"], verbose=True)
